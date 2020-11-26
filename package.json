@@ -1,0 +1,24 @@
+{
+  "name": "generator-swagger-to-ts-schema",
+  "description": "generator swagger to typescript d.ts and api schema file",
+  "keywords": [
+    "yeoman-generator"
+  ],
+  "files": [
+    "generators"
+  ],
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "eslint": "^7.14.0",
+    "js-beautify": "^1.7.5",
+    "lodash": "^4.17.20",
+    "yeoman-generator": "^4.12.0",
+    "yosay": "^2.0.1"
+  }
+}

@@ -1,0 +1,17 @@
+
+<%
+const NAME = className + "Schema";
+%>
+const <%= NAME %>: any = {};
+
+<% for(let key in apiGroups) {
+let $apiGroup = apiGroups[key];
+%>
+/** <%= $apiGroup.description %> */
+<%= NAME %>["<%= key %>"] = {
+    <% $apiGroup.items.forEach(api => { %>
+    /** <%= api.summary %> */
+    <%= api.apiName %> : ["<%= api.path %>", "<%= api.method %>"],
+    <% }) %>
+}
+<% } %>

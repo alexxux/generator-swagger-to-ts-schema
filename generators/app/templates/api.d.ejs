@@ -1,0 +1,104 @@
+
+<%
+
+function getSpace(num) {
+    if (num <= 0) return "";
+    return new Array(num + 1).join(" ");
+}
+
+function getTextLength(str = "") {
+    var strlen = 0;
+    for (var i = 0; i < str.length; i++) {
+        if (str.charCodeAt(i) > 255) //如果是汉字，则字符串长度加2
+            strlen += 2;
+        else
+            strlen++;
+    }
+    return strlen;
+}
+
+function getPropertityKey(p, maxKeyLength) {
+    let key = p.name;
+    if (p.optional) key += "?";
+    let description = p.description || "";
+    return `/** ${description} */ ${key}`;
+}
+
+function getPropertityValue(p) {
+    if (p.isRef) {
+        return p.target;
+    }else if (p.isAtomic) {
+        return p.tsType
+    } else if (p.isObject) {
+        return "object"
+    } else if(p.isArray) {
+        // 数组泛型
+        let T = p.elementType.target ? p.elementType.target : p.elementType.tsType;
+        return `Array<${T}>`
+    }
+}
+
+function getPropertity(p, maxLength) {
+    let key = getPropertityKey(p, maxLength);
+    let value = getPropertityValue(p);
+    return `${key}  : ${value}`
+}
+
+function getPropertityKeyMaxLength(properties) {
+    let maxLength = 0;
+    for(let p of properties) {
+        let len = getTextLength(p.name);
+        if (typeof p.description === "string") {
+            len += getTextLength(p.description)
+        };
+        if (p.optional) len++;
+        if (len > maxLength) maxLength = len;
+    }
+    return maxLength
+}
+
+// 请求参数
+function getApiParam(p) {
+    let paramType = p.tsType.target || p.tsType.tsType;
+
+    if (paramType === "array"){
+        paramType = `Array<${p.tsType.elementType.target}>`;
+    }
+    let description = p.description || "";
+
+    // 使用驼峰命名
+    let key = p.camelCaseName;
+    // 参数非必须
+    if(!p.required) key += "?";
+    return `/** ${description} */ ${key} : ${paramType},`;
+}
+
+%>
+
+// interface
+<% definitions.forEach( definition => {%>
+interface <%= definition.name %> {
+    <% let maxLength = getPropertityKeyMaxLength(definition.tsType.properties); definition.tsType.properties.forEach(propertity => {%><%- getPropertity(propertity, maxLength) %>
+    <% }) %>
+}
+<% }) %>
+
+declare namespace <%= className %> {}
+
+<% for(let key in apiGroups) {
+    let $apiGroup = apiGroups[key];
+%>
+/** <%= $apiGroup.description %> */
+declare namespace <%= className %>.<%= key %> {
+    <% $apiGroup.items.forEach(api => { %>
+        /** <%= api.summary %> */
+        function <%= api.apiName %> (
+            params : {
+                <% api.parameters.forEach(param => { %><%- getApiParam(param) %>
+                <% }) %>
+            }
+        ): Promise <<%= api.response %>>
+    <% }) %>
+}
+
+<% } %>
