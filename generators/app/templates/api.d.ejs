@@ -62,7 +62,8 @@ function getApiParam(p) {
     let paramType = p.tsType.target || p.tsType.tsType;
 
     if (paramType === "array"){
-        paramType = `Array<${p.tsType.elementType.target}>`;
+        let T = p.tsType.elementType.target ? p.tsType.elementType.target : p.tsType.elementType.tsType
+        paramType = `Array<${T}>`;
     }
     let description = p.description || "";
 
