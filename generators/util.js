@@ -17,6 +17,7 @@ function convertType(swaggerType, swagger) {
     if (swaggerType.hasOwnProperty("schema")) {
         return convertType(swaggerType.schema);
     }
+    let _swaggerType = typeof swaggerType.type === "string" && swaggerType.type.toLowerCase();
     if (_.isString(swaggerType.$ref)) {
         typespec.tsType = "ref";
         // typespec.target = swaggerType.$ref.substring(swaggerType.$ref.lastIndexOf("/") + 1);
@@ -30,13 +31,13 @@ function convertType(swaggerType, swagger) {
             .join(" | ");
         typespec.isAtomic = true;
         typespec.isEnum = true;
-    } else if (swaggerType.type === "string") {
+    } else if (_swaggerType === "string") {
         typespec.tsType = "string";
-    } else if (swaggerType.type === "number" || swaggerType.type === "integer") {
+    } else if (_swaggerType === "number" || _swaggerType === "integer") {
         typespec.tsType = "number";
-    } else if (swaggerType.type === "boolean") {
+    } else if (_swaggerType === "boolean") {
         typespec.tsType = "boolean";
-    } else if (swaggerType.type === "array") {
+    } else if (_swaggerType === "array") {
         typespec.tsType = "array";
         typespec.elementType = convertType(swaggerType.items);
     } else {
