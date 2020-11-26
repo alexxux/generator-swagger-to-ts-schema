@@ -41,7 +41,7 @@ function getPropertityValue(p) {
 function getPropertity(p, maxLength) {
     let key = getPropertityKey(p, maxLength);
     let value = getPropertityValue(p);
-    return `${key}  : ${value}`
+    return `${key}: ${value}`
 }
 
 function getPropertityKeyMaxLength(properties) {
@@ -70,7 +70,7 @@ function getApiParam(p) {
     let key = p.camelCaseName;
     // 参数非必须
     if(!p.required) key += "?";
-    return `/** ${description} */ ${key} : ${paramType},`;
+    return `/** ${description} */ ${key}: ${paramType},`;
 }
 
 %>
