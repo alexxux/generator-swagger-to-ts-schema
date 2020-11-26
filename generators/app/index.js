@@ -12,10 +12,16 @@ module.exports = class extends (
     }
 
     prompting() {
-        this.log(yosay(`欢迎使用 swagger to typescript schema`));
-
         let props = {};
         let prompts = [];
+        let welcomeMsg = `欢迎使用 swagger to typescript schema`;
+
+        if (this.options.debug) {
+            props.debug = true;
+            welcomeMsg += "（debug）";
+        }
+
+        this.log(yosay(welcomeMsg));
 
         if (this.options.url) {
             props.url = this.options.url;
@@ -56,13 +62,14 @@ module.exports = class extends (
                 this.props = Object.assign(props, _props);
             });
         }
+
         this.props = props;
         return this;
     }
 
     // 生成文件阶段钩子
     writing() {
-        let { url, className } = this.props;
+        let { url, className, debug } = this.props;
         if (url.includes("swagger-ui.html")) {
             url = url.replace("swagger-ui.html", "v2/api-docs?group=Default");
         }
@@ -76,6 +83,15 @@ module.exports = class extends (
             // 输出目录路径
             this.fs.copyTpl(this.templatePath("api.d.ejs"), this.destinationPath("api.d.ts"), swaggerData);
             this.fs.copyTpl(this.templatePath("api.ejs"), this.destinationPath("api.ts"), swaggerData);
+
+            if (debug) {
+                console.log("debug模式：输出转译文件");
+                this.fs.write(
+                    // 参数 绝对路径 内容
+                    this.destinationPath("swaggerData.json"),
+                    JSON.stringify(swaggerData)
+                );
+            }
         });
     }
 };

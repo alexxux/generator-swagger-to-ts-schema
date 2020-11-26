@@ -9,6 +9,8 @@ npm link
 yo swagger-to-ts-schema
 // 带参数执行
 yo swagger-to-ts-schema --url=http://localhost:8080/swagger-ui.html --className='$api'
+// debug模式，会输出转译后的文件
+yo swagger-to-ts-schema --url=http://localhost:8080/swagger-ui.html --className='$api' --debug
 ```
 
 模板引擎ejs
