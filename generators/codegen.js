@@ -70,9 +70,31 @@ const getPathToMethodName = function (m, path) {
     return m.toLowerCase() + result[0].toUpperCase() + result.substring(1);
 };
 
+const getApiNameApplyMethod = function (method, path) {
+    // 根目录直接返回方法名
+    if (path === "/" || path === "") {
+        return method;
+    }
+
+    let lastPath = path.split("/").slice(-1)[0];
+    return _.camelCase(lastPath) + "_" + method.toLowerCase();
+};
+
+// 根据swapper标题获取命名空间
+const getSwapperNamespace = function (title) {
+    if (typeof title !== "string" || !title) throw new Error("swapper title is not exist");
+    // 移除中文
+    let _title = title.replace(/\p{Unified_Ideograph}/gu, "");
+    // 转为驼峰命名
+    return getClassName(_title);
+};
+
 const getViewForSwagger = function (opts) {
     const swagger = opts.swagger;
+    // 标题
+    const title = opts.title || getSwapperNamespace(swagger.info.title);
     const result = {
+        title,
         swaggerDescription: swagger.info.description, // 该接口的描述信息
         // isSecure: swagger.securityDefinitions !== undefined, // 接口的验证信息
         moduleName: opts.moduleName,
@@ -84,6 +106,7 @@ const getViewForSwagger = function (opts) {
                 : "", // swagger域名
         apis: [], // 接口方法
         definitions: [], // 类型定义
+        pathGroups: {},
     };
 
     // 接口方法
@@ -143,10 +166,13 @@ const getViewForSwagger = function (opts) {
             let $api = {
                 path: apiPath,
                 apiName: $apiName, // api方法名称
+                apiNamex: getApiNameApplyMethod($reqMethod, apiPath),
                 method: $reqMethod, // 请求method
+                isApi: true,
                 isGET: $reqMethod === "GET",
                 isPOST: $reqMethod === "POST",
                 summary: apiOpt.description || apiOpt.summary, // 接口概要
+                definitions: apiOpt.description || apiOpt.summary, // 接口明细，包含tag
                 // externalDocs: op.externalDocs,
                 // isSecure: swagger.security !== undefined || op.security !== undefined,
                 // isSecureToken: secureTypes.indexOf("oauth2") !== -1,
@@ -166,6 +192,7 @@ const getViewForSwagger = function (opts) {
                     if (!desc) continue;
                     // 兼容后端讲tag key设为中文
                     $api.group = (isValidGroupName(name) && name) || (isValidGroupName(desc) && desc) || null;
+                    $api.definitions = `${name} ${desc} ${$api.definitions}`;
                     if (!$api.group) console.log("分组名称不合法");
                     break;
                 }
@@ -275,6 +302,7 @@ const getViewForSwagger = function (opts) {
             // 讲api添加进结果
             result.apis.push($api);
 
+            // 根据swagger tag分组
             if ($api.group) {
                 result.apiGroups = result.apiGroups || {};
                 result.apiGroups[$api.group] = result.apiGroups[$api.group] || {
@@ -285,6 +313,17 @@ const getViewForSwagger = function (opts) {
                 // api分组
                 result.apiGroups[$api.group].items.push($api);
             }
+
+            // 根据服务器路径分组
+            let $apiPaths = $api.path.replace(/^\//, "").split("/");
+            $apiPaths.reduce((map, key, index) => {
+                if (index !== $apiPaths.length - 1) {
+                    map[key] = map[key] || {};
+                } else {
+                    map[$api.apiNamex] = $api;
+                }
+                return map[key];
+            }, result.pathGroups);
         });
     });
 
