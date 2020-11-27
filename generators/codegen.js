@@ -89,13 +89,26 @@ const getSwapperNamespace = function (title) {
     return getClassName(_title);
 };
 
+// 根据字符串key从对象中取值，无key值自动创建
+const getStrkeyFromObj = function (obj, strKey = "", separator = ".") {
+    if (!strKey) return obj;
+    let keys = strKey.split(separator);
+    let target = obj;
+    keys.forEach((key) => {
+        target[key] = target[key] || {};
+        target = target[key];
+    });
+    return target;
+};
+
 const getViewForSwagger = function (opts) {
     const swagger = opts.swagger;
+    if (!swagger.info) throw new Error("swagger is not exist");
     // 标题
-    const title = opts.title || getSwapperNamespace(swagger.info.title);
+    const namespace = opts.namespace || getSwapperNamespace(swagger.info.title);
     const result = {
-        title,
-        swaggerDescription: swagger.info.description, // 该接口的描述信息
+        namespace,
+        description: opts.description || swagger.info.description, // 该接口的描述信息
         // isSecure: swagger.securityDefinitions !== undefined, // 接口的验证信息
         moduleName: opts.moduleName,
         className: opts.className || "$api",
@@ -107,6 +120,7 @@ const getViewForSwagger = function (opts) {
         apis: [], // 接口方法
         definitions: [], // 类型定义
         pathGroups: {},
+        parentGroups: {},
     };
 
     // 接口方法
@@ -162,11 +176,17 @@ const getViewForSwagger = function (opts) {
             }
             API_NAME_SET.add($apiName);
 
+            // 获得父路径，根路径为空字符串
+            let parentPath = apiPath.replace(/^\//, "").split("/");
+            parentPath.pop();
+            parentPath = parentPath.join("/");
+
             // 构造api方法对象
             let $api = {
                 path: apiPath,
                 apiName: $apiName, // api方法名称
                 apiNamex: getApiNameApplyMethod($reqMethod, apiPath),
+                parentPath, // api的父路径
                 method: $reqMethod, // 请求method
                 isApi: true,
                 isGET: $reqMethod === "GET",
@@ -303,28 +323,37 @@ const getViewForSwagger = function (opts) {
             result.apis.push($api);
 
             // 根据swagger tag分组
-            if ($api.group) {
-                result.apiGroups = result.apiGroups || {};
-                result.apiGroups[$api.group] = result.apiGroups[$api.group] || {
-                    description: `${$api.group} ${TAGS_MAP.get($api.group)}`, // 分组描述信息
-                    items: [],
-                };
+            // if ($api.group) {
+            //     result.apiGroups = result.apiGroups || {};
+            //     result.apiGroups[$api.group] = result.apiGroups[$api.group] || {
+            //         description: `${$api.group} ${TAGS_MAP.get($api.group)}`, // 分组描述信息
+            //         items: [],
+            //     };
 
-                // api分组
-                result.apiGroups[$api.group].items.push($api);
-            }
+            //     // api分组
+            //     result.apiGroups[$api.group].items.push($api);
+            // }
 
             // 根据服务器路径分组
-            let $apiPaths = $api.path.replace(/^\//, "").split("/");
-            $apiPaths.reduce((map, key, index) => {
-                if (index !== $apiPaths.length - 1) {
-                    map[key] = map[key] || {};
-                } else {
-                    map[$api.apiNamex] = $api;
-                }
-                return map[key];
-            }, result.pathGroups);
+            // let $apiPaths = $api.path.replace(/^\//, "").split("/");
+            // $apiPaths.reduce((map, key, index) => {
+            //     if (index !== $apiPaths.length - 1) {
+            //         map[key] = map[key] || {};
+            //     } else {
+            //         map[$api.apiNamex] = $api;
+            //     }
+            //     return map[key];
+            // }, result.pathGroups);
         });
+    });
+
+    // 根据父路径进行分组
+    result.apis.forEach((apiObj) => {
+        let groups = getStrkeyFromObj(result.parentGroups, apiObj.parentPath, "/");
+        if (!groups.items) {
+            groups.items = [];
+        }
+        groups.items.push(apiObj);
     });
 
     // 遍历definitions属性，构造ts的interface
