@@ -73,7 +73,7 @@ const getPathToMethodName = function (m, path) {
 const getApiNameApplyMethod = function (method, path) {
     // 根目录直接返回方法名
     if (path === "/" || path === "") {
-        return method;
+        return `_${method}`;
     }
 
     let lastPath = path.split("/").slice(-1)[0];
@@ -318,6 +318,12 @@ const getViewForSwagger = function (opts) {
                 $param.cardinality = $param.required ? "" : "?";
                 $api.parameters.push($param);
             });
+
+            // api请求参数是否都放在body里
+            $api.isBodyParameter =
+                ($api.parameters.length &&
+                    $api.parameters.filter((p) => p.isBodyParameter).length === $api.parameters.length) ||
+                false;
 
             // 讲api添加进结果
             result.apis.push($api);

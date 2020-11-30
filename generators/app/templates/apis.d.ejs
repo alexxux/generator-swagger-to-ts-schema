@@ -69,8 +69,9 @@ function loadPathTree(pathObj, templates = []) {
         let path = pathObj[pathKey];
         // 递归遍历路径树，api会存放在items数组里
         if (Array.isArray(path)) {
-            // 在命名空间内填充api
-            let namespaceTmp = [`${getSpace(8)}namespace ${path[0].parentPath.split("/").join(".")} {`];
+            // 在命名空间内填充api，在根路径不补命名空间
+            let namespace = path[0].parentPath && path[0].parentPath.split("/").join(".");
+            let namespaceTmp = namespace && [`${getSpace(8)}namespace ${namespace} {`] || [];
             path.forEach(api => {
 
                 // api描述
@@ -83,7 +84,7 @@ function loadPathTree(pathObj, templates = []) {
                 namespaceTmp.push(`${getSpace(8)}}): Promise <${api.response}>`);
                 namespaceTmp.push(`${getSpace(4)}`)
             })
-            namespaceTmp.push(`${getSpace(2)}}`)
+            namespace && namespaceTmp.push(`${getSpace(2)}}`)
             templates.push(namespaceTmp.join("\n"));
         } else {
             loadPathTree(path, templates);

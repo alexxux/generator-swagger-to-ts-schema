@@ -14,7 +14,13 @@ function loadPathTree(pathObj, templates = ["{"], level = 1) {
         if (Array.isArray(path)) {
             path.forEach(p => {
                 templates.push(`${getSpace(4 * level)}/** ${p.summary} */`);
-                templates.push(`${getSpace(4 * level)}"${p.apiNamex}": ["${p.path}", "${p.method}"],`);
+                let options = [];
+                if (p.isBodyParameter) {
+                    options.push("isBodyParameter: 1")
+                };
+                options = options.length && `, { ${options.join(",")} }` || "";
+
+                templates.push(`${getSpace(4 * level)}"${p.apiNamex}": ["${p.path}", "${p.method}"${options}],`);
             })
         } else {
             templates.push(`${getSpace(4 * level)}${pathKey}: {`);
