@@ -59,7 +59,7 @@ function getApiParam(p) {
     let key = p.camelCaseName;
     // 参数非必须
     if(!p.required) key += "?";
-    return `/** ${description} */ ${key}: ${paramType},`;
+    return `/** ${description} */ ${key}: ${paramType}`;
 }
 
 // 根据路径树生成api
@@ -76,13 +76,25 @@ function loadPathTree(pathObj, templates = []) {
 
                 // api描述
                 namespaceTmp.push(`${getSpace(8)}/** ${api.summary} */`);
-                namespaceTmp.push(`${getSpace(8)}function ${api.apiNamex} ( params : {`);
 
-                api.parameters.forEach(param => {
-                    namespaceTmp.push(`${getSpace(16)}${getApiParam(param)}`);
-                });
-                namespaceTmp.push(`${getSpace(8)}}): Promise <${api.response}>`);
-                namespaceTmp.push(`${getSpace(4)}`)
+                if (api.isBodyParameter) {
+                    namespaceTmp.push(`${getSpace(8)}function ${api.apiNamex} (`);
+
+                    let len = api.parameters.length - 1;
+                    api.parameters.forEach((param, index) => {
+                        namespaceTmp.push(`${getSpace(16)}${getApiParam(param)}${len === index ? "" : ","}`);
+                    });
+                    namespaceTmp.push(`${getSpace(8)}): Promise <${api.response}>`);
+                    namespaceTmp.push(`${getSpace(4)}`)
+                } else {
+                    namespaceTmp.push(`${getSpace(8)}function ${api.apiNamex} ( params : {`);
+
+                    api.parameters.forEach(param => {
+                        namespaceTmp.push(`${getSpace(16)}${getApiParam(param)}`);
+                    });
+                    namespaceTmp.push(`${getSpace(8)}}): Promise <${api.response}>`);
+                    namespaceTmp.push(`${getSpace(4)}`)
+                }
             })
             namespace && namespaceTmp.push(`${getSpace(2)}}`)
             templates.push(namespaceTmp.join("\n"));
